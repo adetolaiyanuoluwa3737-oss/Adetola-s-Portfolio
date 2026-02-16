@@ -2,8 +2,7 @@ import Hero from '@/components/Hero';
 import ArticleCard from '@/components/ArticleCard';
 import { getRecentPosts } from '@/lib/hashnode';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 3600; // Revalidate every hour
+export const revalidate = 3600; // ISR: Revalidate every hour
 
 export default async function Home() {
   const posts = await getRecentPosts(7);
