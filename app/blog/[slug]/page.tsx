@@ -1,4 +1,4 @@
-import { getPostBySlug } from '@/lib/hashnode';
+import { getPostBySlug, getRecentPosts } from '@/lib/hashnode';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -9,6 +9,18 @@ interface BlogPostPageProps {
     slug: string;
   }>;
 }
+
+export async function generateStaticParams() {
+  try {
+    const posts = await getRecentPosts(20);
+    return posts.map((post) => ({ slug: post.slug }));
+  } catch (error) {
+    console.error('[Build] Error generating static params:', error);
+    return [];
+  }
+}
+
+export const dynamicParams = true;
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;

@@ -5,6 +5,8 @@ export const metadata: Metadata = {
   description: 'Learn more about Adetola Iyanuoluwa, B2B SaaS content writer specializing in technical content that connects, converts, and ranks.',
 };
 
+export const dynamic = 'force-static';
+
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-cream">

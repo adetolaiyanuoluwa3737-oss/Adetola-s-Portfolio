@@ -104,6 +104,7 @@ export const GET_POST_BY_SLUG = `
 
 export async function getRecentPosts(limit: number = 6): Promise<HashnodePost[]> {
   try {
+    console.log(`[Hashnode] Fetching ${limit} recent posts...`);
     const data: { publication: PublicationData } = await hashnodeClient.request(
       GET_RECENT_POSTS,
       {
@@ -112,7 +113,9 @@ export async function getRecentPosts(limit: number = 6): Promise<HashnodePost[]>
       }
     );
 
-    return data.publication.posts.edges.map((edge) => edge.node);
+    const posts = data.publication.posts.edges.map((edge) => edge.node);
+    console.log(`[Hashnode] Successfully fetched ${posts.length} posts`);
+    return posts;
   } catch (error) {
     console.error('Error fetching posts from Hashnode:', error);
     return [];
