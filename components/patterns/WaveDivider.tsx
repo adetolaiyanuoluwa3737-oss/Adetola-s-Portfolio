@@ -11,7 +11,6 @@ export default function WaveDivider({
   position = 'bottom',
   className = '',
   fillColor = '#F8FAFB',
-  backgroundColor = '#0A1F47'
 }: WaveDividerProps) {
   const topWave = (
     <div className="absolute top-0 left-0 w-full overflow-hidden leading-none">

@@ -130,9 +130,9 @@ export async function getRecentPosts(limit: number = 6): Promise<HashnodePost[]>
       const posts = data.publication.posts.edges.map((edge) => edge.node);
       console.log(`[Hashnode] ✓ Successfully fetched ${posts.length} posts`);
       return posts;
-    } catch (error: any) {
-      lastError = error;
-      console.error(`[Hashnode] ✗ Attempt ${attempt} failed:`, error.message);
+    } catch (error: unknown) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.error(`[Hashnode] ✗ Attempt ${attempt} failed:`, (error as Error).message);
 
       if (attempt < maxRetries) {
         const delay = attempt * 2000; // 2s, 4s

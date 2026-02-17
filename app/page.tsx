@@ -214,10 +214,12 @@ export default async function Home() {
               >
                 {post.coverImage?.url && (
                   <div className="relative aspect-[16/10] overflow-hidden rounded-sm mb-4">
-                    <img
+                    <Image
                       src={post.coverImage.url}
                       alt={post.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, 50vw"
                     />
                   </div>
                 )}
