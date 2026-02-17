@@ -7,6 +7,15 @@ export const hashnodeClient = new GraphQLClient(HASHNODE_API_URL, {
   headers: {
     Authorization: process.env.HASHNODE_API_TOKEN || '',
   },
+  // Remove custom fetch wrapper - it might be causing timeout issues
+  requestMiddleware: (request) => {
+    console.log('[GraphQL Request]', request.url);
+    return request;
+  },
+  responseMiddleware: (response) => {
+    console.log('[GraphQL Response] Status:', response.status);
+    return response;
+  },
 });
 
 export interface HashnodePost {
@@ -103,21 +112,124 @@ export const GET_POST_BY_SLUG = `
 `;
 
 export async function getRecentPosts(limit: number = 6): Promise<HashnodePost[]> {
+  const maxRetries = 3;
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[Hashnode] Attempt ${attempt}/${maxRetries}: Fetching ${limit} recent posts...`);
+
+      const data: { publication: PublicationData } = await hashnodeClient.request(
+        GET_RECENT_POSTS,
+        {
+          host: PUBLICATION_HOST,
+          first: limit,
+        }
+      );
+
+      const posts = data.publication.posts.edges.map((edge) => edge.node);
+      console.log(`[Hashnode] ✓ Successfully fetched ${posts.length} posts`);
+      return posts;
+    } catch (error: any) {
+      lastError = error;
+      console.error(`[Hashnode] ✗ Attempt ${attempt} failed:`, error.message);
+
+      if (attempt < maxRetries) {
+        const delay = attempt * 2000; // 2s, 4s
+        console.log(`[Hashnode] Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  console.error('[Hashnode] All retry attempts failed:', lastError);
+  return [];
+}
+
+// Interface for Hashnode static pages
+export interface HashnodeStaticPage {
+  id: string;
+  title: string;
+  slug: string;
+  content: {
+    html: string;
+    markdown: string;
+  };
+}
+
+// GraphQL query to fetch a static page by slug
+export const GET_STATIC_PAGE = `
+  query GetStaticPage($host: String!, $slug: String!) {
+    publication(host: $host) {
+      staticPage(slug: $slug) {
+        id
+        title
+        slug
+        content {
+          html
+          markdown
+        }
+      }
+    }
+  }
+`;
+
+// GraphQL query to fetch all static pages
+export const GET_STATIC_PAGES = `
+  query GetStaticPages($host: String!, $first: Int!) {
+    publication(host: $host) {
+      staticPages(first: $first) {
+        edges {
+          node {
+            id
+            title
+            slug
+            content {
+              html
+              markdown
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export async function getStaticPage(slug: string): Promise<HashnodeStaticPage | null> {
   try {
-    console.log(`[Hashnode] Fetching ${limit} recent posts...`);
-    const data: { publication: PublicationData } = await hashnodeClient.request(
-      GET_RECENT_POSTS,
+    console.log(`[Hashnode] Fetching static page: ${slug}`);
+    const data: { publication: { staticPage: HashnodeStaticPage } } = await hashnodeClient.request(
+      GET_STATIC_PAGE,
       {
         host: PUBLICATION_HOST,
-        first: limit,
+        slug,
       }
     );
 
-    const posts = data.publication.posts.edges.map((edge) => edge.node);
-    console.log(`[Hashnode] Successfully fetched ${posts.length} posts`);
-    return posts;
+    console.log(`[Hashnode] Successfully fetched static page: ${slug}`);
+    return data.publication.staticPage;
   } catch (error) {
-    console.error('Error fetching posts from Hashnode:', error);
+    console.error(`Error fetching static page "${slug}":`, error);
+    return null;
+  }
+}
+
+export async function getStaticPages(): Promise<HashnodeStaticPage[]> {
+  try {
+    console.log('[Hashnode] Fetching all static pages...');
+    const data: { publication: { staticPages: { edges: Array<{ node: HashnodeStaticPage }> } } } = await hashnodeClient.request(
+      GET_STATIC_PAGES,
+      {
+        host: PUBLICATION_HOST,
+        first: 20,
+      }
+    );
+
+    const pages = data.publication.staticPages.edges.map((edge) => edge.node);
+    console.log(`[Hashnode] Successfully fetched ${pages.length} static pages`);
+    return pages;
+  } catch (error) {
+    console.error('Error fetching static pages:', error);
     return [];
   }
 }
