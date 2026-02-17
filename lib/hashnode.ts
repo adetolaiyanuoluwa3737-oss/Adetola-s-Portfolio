@@ -13,8 +13,7 @@ export const hashnodeClient = new GraphQLClient(HASHNODE_API_URL, {
     return request;
   },
   responseMiddleware: (response) => {
-    console.log('[GraphQL Response] Status:', response.status);
-    return response;
+    console.log('[GraphQL Response] Status:', 'status' in response ? response.status : 'error');
   },
 });
 
